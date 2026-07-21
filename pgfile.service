@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 liaoyq / ASRT Contributors
+
+[Unit]
+Description=PGFile Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/pgfile server -f /etc/pgfile.auth
+# 如果 pgfile 需要特定工作目录
+WorkingDirectory=/var/lib/pgfile
+
+# 日志输出
+StandardOutput=append:/var/log/pgfile.log
+StandardError=append:/var/log/pgfile.log
+
+# 重启策略
+# Restart=always
+# RestartSec=5
+
+
+[Install]
+WantedBy=multi-user.target

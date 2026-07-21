@@ -1,0 +1,56 @@
+# Xcode
+.DS_Store
+Thumbs.db
+build/
+logs/
+backup/
+AGENTS.md
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+*.xcworkspace
+**/xcshareddata
+#!default.xcworkspace
+xcuserdata
+profile
+*.moved-aside
+DerivedData
+.vscode/*
+.vs/
+*.xcuserstate
+# Pods - for those of you who use CocoaPods
+#Pods
+*[Rr]elease/
+*[Dd]ebug/
+ipch/
+*.obj
+# for IDEA
+.gradle
+*/.cxx/*
+build/*
+.idea/*
+*.iml
+/out/*
+target/*
+.idea
+*/*.iml
+.project
+.classpath
+.setttings/
+#visual studio
+**/*.sdf
+*.sdf
+**/*.vcxproj.user
+**/*.opensdf
+*/version.h
+# for linux make
+Product/
+*.log
+bin/
+winlib/
+*/*.iso
