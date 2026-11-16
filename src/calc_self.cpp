@@ -147,15 +147,15 @@ static int copy_file_atomic(const char *src, const char *dest)
     return 0;
 }
 static char ori_path[1024];
-static char newEnv1[256];
+static char newEnv1[1024];
 static char pathEnv[1024];
 static char * const envp[]={
     newEnv1,pathEnv,"HOME=/root","USER=root",NULL
 };
 DLL_PUBLIC void swapSelf(char *argv[])
 {
-    char path[1024];
-    memset(path,0,1024);
+    char path[800];
+    memset(path,0,sizeof(path));
     if (readlink("/proc/self/exe", path, sizeof(path)) == -1) {
         perror("readlink");
         return ;

@@ -16,6 +16,7 @@
 #include <MinoCrypt/sm4.h>
 #include <AsyncRuntime/asrt_path.h>
 #include <AsyncRuntime/asrt_dirent.h>
+#include <AsyncRuntime/asrt_shell.h>
 #include <string.h>
 #include <sys/types.h>
 #ifndef WIN32
@@ -179,15 +180,26 @@ int PgFileRunner::handleFileRequest()
     } else {
         m_ctx.fileSize = atoll(base);
         if (m_ctx.filePath.endsWith('/')) return replay(3,", can not save to path");
+        if( m_ctx.fileSize>0 ){
+            char response[77];
+            memcpy(response, CMD_UPGRADE, 11);
+            Utils::hex(localKey.pub, C25519_PUB_KEY_LEN, response + 11);
+            response[75] = '\r';
+            response[76] = '\n';
+            client_.send(response, sizeof(response));
+            
+            APPINFO("Permission granted for user: %s, path: %s, continue....", m_ctx.userKey.data(), m_ctx.filePath.data());
+        } else {
+            AsrtPath parentDir(m_ctx.filePath);
+            parentDir.create(0755);
+            AsrtFile::delete_file(m_ctx.filePath.data());
+            AsrtFile outFile;
+            if (outFile.open(m_ctx.filePath.data(), O_WRONLY | O_CREAT | O_TRUNC,0644) != 0)
+                return replay(4,"Cannot create file");
 
-        char response[77];
-        memcpy(response, CMD_UPGRADE, 11);
-        Utils::hex(localKey.pub, C25519_PUB_KEY_LEN, response + 11);
-        response[75] = '\r';
-        response[76] = '\n';
-        client_.send(response, sizeof(response));
-        
-        APPINFO("Permission granted for user: %s, path: %s, continue....", m_ctx.userKey.data(), m_ctx.filePath.data());
+            APPINFO("Permission granted for user: %s, path: %s, file create success", m_ctx.userKey.data(), m_ctx.filePath.data());
+            replay(0, "file created");
+        }
     }
     return 0;
 }
@@ -274,16 +286,7 @@ int PgFileRunner::deploy(const char *arg)
 
     int status = 0;
     if( cancelled ){
-        kill(-pid, SIGINT);
-        // 给脚本一次正常处理 SIGINT 的机会，随后确保整个进程组被释放。
-        for( int i=0; i<10; i++ ){
-            pid_t waited = waitpid(pid, &status, WNOHANG);
-            if( waited == pid ) return 0;
-            if( waited < 0 ) return 0;
-            usleep(100000);
-        }
-        kill(-pid, SIGKILL);
-        waitpid(pid, &status, 0);
+        AsrtShell::terminateProcessGroup(pid);
         return 0;
     }
     if( waitpid(pid, &status, 0) < 0 ) return 1;

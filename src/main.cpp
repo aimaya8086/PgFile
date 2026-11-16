@@ -16,6 +16,7 @@
 #include "AsyncRuntime/asrt_string.h"
 #include "AsyncRuntime/asrt_runtime.h"
 #include "AsyncRuntime/asrt_file.h"
+#include "AsyncRuntime/asrt_tickcount.h"
 #include "calc_self.h"
 
 #ifdef __APPLE__
@@ -238,11 +239,13 @@ int uploadFile()
         APPINFO("User: %s", userKey);
         APPINFO("Server: %s", serverAddr);
         APPINFO("dest path: %s", destPath);
+        const int startTime = AsrtTickCount::current();
         client.clearPath(userKey,destPath);
         destPath[strlen(destPath)-1]  =0;
         int nfiles = client.uploadPath(userKey, filePath, destPath);
         if (nfiles >= 0) {
-            APPINFO("Upload completed successfully! %d files transferred.", nfiles);
+            APPINFO("Upload completed successfully! %d files transferred. (elapsed: %.3f s)", nfiles,
+                    (AsrtTickCount::current() - startTime) / 1000.0);
             return 0;
         }
         APPERR("Directory upload failed (code: %d): %s", nfiles, client.getLastError());

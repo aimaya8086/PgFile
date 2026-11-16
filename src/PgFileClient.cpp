@@ -14,6 +14,7 @@
 #include <MinoCrypt/C25519.h>
 #include <MinoCrypt/Utils.h>
 #include <MinoCrypt/sm4.h>
+#include <AsyncRuntime/asrt_tickcount.h>
 #include <sys/types.h>
 
 
@@ -44,6 +45,7 @@ void PgFileClient::stop()
 }
 
 TransferResult PgFileClient::uploadFile(const char * userKey, const char * filePath, const char * destPath) {
+    const int startTime = AsrtTickCount::current();
     AsrtFile file;
     if (file.open(filePath, O_RDONLY) != 0) {
         m_lastError.Format("Cannot open file: %s", filePath);
@@ -51,11 +53,11 @@ TransferResult PgFileClient::uploadFile(const char * userKey, const char * fileP
         return TransferResult::FileNotFound;
     }
     
-    int64_t fileSize = file.filesize();   //file.seek(0, SEEK_END);
+    long fileSize = file.filesize();   //file.seek(0, SEEK_END);
    
     
-    if (fileSize <= 0) {
-        m_lastError.Format("Invalid file size: %s", filePath);
+    if (fileSize < 0) {
+        m_lastError.Format("Invalid file size [%ld]: %s",fileSize, filePath);
         //  APPERR("%s", m_lastError.data());
         return TransferResult::FileNotFound;
     }
@@ -106,6 +108,13 @@ TransferResult PgFileClient::uploadFile(const char * userKey, const char * fileP
             m_lastError = base + strlen(CMD_BAD);
           //  APPERR("%s", base);
             return TransferResult::PermissionDenied;
+        }
+        if( strncmp(base, CMD_OK, strlen(CMD_OK)) ==0 ){
+            m_server.close();
+            
+            APPINFO("File uploaded successfully: %s (elapsed: %.3f s)", filePath,
+                    (AsrtTickCount::current() - startTime) / 1000.0);
+            return TransferResult::Success;
         }
         m_lastError = "Unknown server response";
         //APPERR("%s", m_lastError.data());
@@ -180,7 +189,8 @@ TransferResult PgFileClient::uploadFile(const char * userKey, const char * fileP
     file.close();
     m_server.close();
     
-    APPINFO("File uploaded successfully: %s", filePath);
+    APPINFO("File uploaded successfully: %s (elapsed: %.3f s)", filePath,
+            (AsrtTickCount::current() - startTime) / 1000.0);
     return TransferResult::Success;
 }
 TransferResult PgFileClient::clearPath(const char * userKey,const char * destPath)
